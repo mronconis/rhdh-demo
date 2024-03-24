@@ -1,0 +1,1 @@
+export { scaffolderBackendModuleHttpRequest as default } from './plugin';

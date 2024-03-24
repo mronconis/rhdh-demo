@@ -1,0 +1,54 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: custom-app-config
+data:
+  custom-app-config.yaml: |
+    app:
+      title: Red Hat Developer Hub Demo
+
+    integrations:
+      github:
+        - host: github.com
+          token: ${GITHUB_TOKEN}
+
+    auth:
+      allowGuestAccess: true
+      environment: development
+      providers:
+        github:
+          development:
+            clientId: ${GITHUB_APP_CLIENT_ID}
+            clientSecret: ${GITHUB_APP_CLIENT_SECRET}
+    
+    proxy:
+      '/argocd/api':
+        # url to the api of your hosted argoCD instance
+        target: http://openshift-gitops-server-openshift-gitops.apps-crc.testing/api/v1
+        changeOrigin: true
+        # this line is required if your hosted argoCD instance has self-signed certificate
+        secure: false
+
+    argocd:
+      # optional: this will link to your argoCD web UI for each argoCD application
+      baseUrl: http://openshift-gitops-server-openshift-gitops.apps-crc.testing
+      username: ${ARGOCD_USERNAME}
+      password: ${ARGOCD_PASSWORD}
+      waitCycles: 25
+      appLocatorMethods:
+        - type: 'config'
+          instances:
+            - name: argocdInstance
+              url: http://openshift-gitops-server-openshift-gitops.apps-crc.testing
+              
+    kubernetes:
+      customResources:
+        - group: 'tekton.dev'
+          apiVersion: 'v1'
+          plural: 'pipelineruns'
+        - group: 'tekton.dev'
+          apiVersion: 'v1'
+          plural: 'taskruns'
+    
+    enabled:
+      github: true

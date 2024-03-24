@@ -1,0 +1,72 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: quarkus-pipeline
+  namespace: rhdh-demo
+  labels:
+    backstage.io/kubernetes-id: quarkus-camel-demo
+spec:
+  params:
+    - name: gitUrl
+      type: string
+      description: The git repository URL to clone from.
+    - name: gitRevision
+      type: string
+      description: The git branch to clone.
+    - name: contextDir
+      description: the context directory from where to build the application
+      default: .
+    - name: imageGroup
+      description: Container image group
+    - name: imageName
+      description: Container image name
+    - name: baseImage
+      description: base image to run maven build and output image build
+      default: registry.access.redhat.com/ubi8/openjdk-11
+  workspaces:
+    - name: shared-workspace
+    - name: maven-settings
+  tasks:
+    - name: fetch-repository
+      taskRef:
+        kind: ClusterTask
+        name: git-clone
+      workspaces:
+        - name: output
+          workspace: shared-workspace
+      params:
+        - name: url
+          value: $(params.gitUrl)
+        - name: revision
+          value: $(params.gitRevision)
+        - name: deleteExisting
+          value: "true"
+    - name: build-maven
+      taskRef:
+        kind: ClusterTask
+        name: maven
+      runAfter:
+        - fetch-repository
+      params:
+        - name: MAVEN_IMAGE
+          value: $(params.baseImage)
+        - name: CONTEXT_DIR
+          value: $(params.contextDir)
+        - name: GOALS
+          value:
+            - -DskipTests=true
+            - -Dquarkus.jib.base-jvm-image=$(params.baseImage)
+            - -Dquarkus.container-image.builder=jib
+            - -Dquarkus.openshift.jvm-dockerfile=src/main/docker/Dockerfile.jvm
+            - -Dquarkus.container-image.insecure=true
+            - -Dquarkus.container-image.registry=quay.io
+            - -Dquarkus.container-image.build=true
+            - -Dquarkus.container-image.push=true
+            - -Dquarkus.container-image.group=$(params.imageGroup)
+            - -Dquarkus.container-image.name=$(params.imageName)
+            - package
+      workspaces:
+        - name: maven-settings
+          workspace: maven-settings
+        - name: source
+          workspace: shared-workspace

@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+
+    "outDir": "dist-types/src",
+    "rootDir": "src"
+  },
+  "include": ["src/*.ts"],
+  "exclude": ["node_modules/**"],
+  "compileOnSave": false
+}
